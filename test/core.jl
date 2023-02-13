@@ -22,11 +22,39 @@ using MonteCarlo, Test
     func4(x, y, z) = z
 
 
-
+    # figure out how do i test with know faulty input
     integrater = MCintegrate(ndim, xlo, xhi, insideChecker, [func1, func2, func3, func4])
     @test all(x -> isreal(x), [integrater.xlo..., xhi...])
     @test all(x -> x[1] <= x[2], collect(zip(integrater.xlo, integrater.xhi)))
     @test all(x -> length(x) == integrater.ndim, [integrater.xlo, integrater.xhi])
     @test integrater.step_taken == 0
     @test integrater.vol == prod(xhi .- xlo)
+
+
+    # faulty boundaries
+    xlo_f, xhi_f = [0, 1, 3], [-2, 4, 5]
+    @test_throws AssertionError MCintegrate(
+        ndim,
+        xlo_f,
+        xhi_f,
+        insideChecker,
+        [func1, func2, func3, func4],
+    )
+
+    @test_throws AssertionError MCintegrate(
+        ndim,
+        xlo[1:2],
+        xhi,
+        insideChecker,
+        [func1, func2, func3, func4],
+    )
+
+    @test_throws AssertionError MCintegrate(
+        2,
+        xlo,
+        xhi,
+        insideChecker,
+        [func1, func2, func3, func4],
+    )
+
 end
