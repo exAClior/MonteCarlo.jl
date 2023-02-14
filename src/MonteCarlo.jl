@@ -1,6 +1,7 @@
 module MonteCarlo
 
-export MCintegrate
+using Random
+export MCintegrate, sample_NSteps!, calc_answer!
 
 
 # Write your package code here.

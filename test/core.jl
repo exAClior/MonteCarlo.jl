@@ -1,8 +1,8 @@
 using MonteCarlo, Test
 
-@testset "Monte Carlo Integrator" begin
+@testset "Monte Carlo Constructor" begin
     # dimension of space of be integrated over
-    ndim, nfunc, step_taken = 3, 4, 0
+    ndim, nfunc = 3, 4
     # boundaries of integration
     xlo, xhi = [-5.0, -5.0, -5.0], [5.0, 5.0, 5.0]
 
@@ -32,7 +32,16 @@ using MonteCarlo, Test
 
 
     # faulty boundaries
-    xlo_f, xhi_f = [0, 1, 3], [-2, 4, 5]
+    xlo_int, xhi_int = [0, 1, 3], [2.0, 4.0, 5.0]
+    @test_throws MethodError MCintegrate(
+        ndim,
+        xlo_int,
+        xhi_int,
+        insideChecker,
+        [func1, func2, func3, func4],
+    )
+
+    xlo_f, xhi_f = [0.0, 1.0, 3.0], [-2.0, 4.0, 5.0]
     @test_throws AssertionError MCintegrate(
         ndim,
         xlo_f,
@@ -56,5 +65,26 @@ using MonteCarlo, Test
         insideChecker,
         [func1, func2, func3, func4],
     )
+
+end
+
+@testset "Monte Carlo Integrate" begin
+
+    ndim, nfunc, step_taken = 2, 4, 0
+    # boundaries of integration
+    xlo, xhi = [-1.0, -1.0], [1.0, 1.0]
+
+    insideChecker(x, y) = x^2 + y^2 <= 1.0 ? true : false
+
+    # there might be multiples functions that we want to integrate in the same region
+    func1(x, y) = 1 # integrates the area
+    func2(x, y) = sqrt(1- x^2 - y^2) # integrates the volume
+
+
+    # figure out how do i test with know faulty input
+    integrater = MCintegrate(ndim, xlo, xhi, insideChecker, [func1, func2])
+    sample_NSteps!(integrater,10000)
+    @test calc_answer!(integrater)[1] ≈ [π , π]
+
 
 end
