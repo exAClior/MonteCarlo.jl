@@ -40,7 +40,7 @@ function MCintegrate(
 end
 
 
-function sample_NSteps!(mci::MCintegrate, nstep::Int; rng::AbstractRNG = Xoshiro(0))
+function sample_NSteps!(mci::MCintegrate, nstep::Int; rng::AbstractRNG=Xoshiro(0))
     # generate the random positions
     xs = rand(rng, eltype(mci.xlo), (mci.ndim, nstep))
     for i = 1:nstep
@@ -55,8 +55,8 @@ function sample_NSteps!(mci::MCintegrate, nstep::Int; rng::AbstractRNG = Xoshiro
     for i = 1:nstep
         if mci.insideChecker(xs[:, i]'...)
             for j = 1:mci.nfunc
-                cur_f_avg[j] += cur_fct * mci.funcs[j](xs[:, i]'...)
-                cur_fsq_avg[j] += cur_fct * (mci.funcs[j](xs[:, i]'...))^2
+                cur_f_avg[j] += cur_fct * mci.funcs[j](xs[:, i]'...) / nstep
+                cur_fsq_avg[j] += cur_fct * (mci.funcs[j](xs[:, i]'...))^2 / nstep
             end
         end
     end
@@ -72,6 +72,6 @@ end
 
 function calc_answer!(mci::MCintegrate)
     mci.ff = mci.vol .* mci.f_avg
-    mci.fferr = mci.vol .* sqrt.((mci.fsq_avg .- (mci.f_avg) .^ 2 / mci.step_taken))
+    mci.fferr = mci.vol .* sqrt.((mci.fsq_avg .- (mci.f_avg) .^ 2) / mci.step_taken)
     return mci.ff, mci.fferr
 end

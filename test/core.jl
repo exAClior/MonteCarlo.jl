@@ -2,7 +2,7 @@ using MonteCarlo, Test
 
 @testset "Monte Carlo Constructor" begin
     # dimension of space of be integrated over
-    ndim, nfunc = 3, 4
+    ndim = 3
     # boundaries of integration
     xlo, xhi = [-5.0, -5.0, -5.0], [5.0, 5.0, 5.0]
 
@@ -70,7 +70,7 @@ end
 
 @testset "Monte Carlo Integrate" begin
 
-    ndim, nfunc, step_taken = 2, 4, 0
+    ndim = 2
     # boundaries of integration
     xlo, xhi = [-1.0, -1.0], [1.0, 1.0]
 
@@ -78,13 +78,18 @@ end
 
     # there might be multiples functions that we want to integrate in the same region
     func1(x, y) = 1 # integrates the area
-    func2(x, y) = sqrt(1- x^2 - y^2) # integrates the volume
+    func2(x, y) = sqrt(1 - x^2 - y^2) # integrates the volume
 
 
     # figure out how do i test with know faulty input
     integrater = MCintegrate(ndim, xlo, xhi, insideChecker, [func1, func2])
-    sample_NSteps!(integrater,10000)
-    @test calc_answer!(integrater)[1] ≈ [π , π]
+    sample_NSteps!(integrater, 500000)
+    ansVec, err = calc_answer!(integrater)
+    trueAns = [π, π / 2]
+    for i in 1:2
+        @test isapprox(ansVec[i], trueAns[i], atol=err[i])
+        println(ansVec[i], " ", err[i])
+    end
 
 
 end
