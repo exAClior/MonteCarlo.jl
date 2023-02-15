@@ -11,6 +11,7 @@ mutable struct MCintegrate{T<:AbstractFloat,VT<:AbstractVector{T}}
     fferr::VT #  estimated errors to be updated by calc_answer
     f_avg::VT # average of sampled function value,
     fsq_avg::VT #  average of sample function squared value
+    rng::AbstractRNG # random number generator
 end
 
 function MCintegrate(
@@ -19,6 +20,7 @@ function MCintegrate(
     xhi::VT,
     insideChecker::Function,
     funcs::Vector{Function},
+    rng::AbstractRNG=Xoshiro(0)
 ) where {T<:Real,VT<:AbstractVector{T}}
     @assert length(xlo) == length(xhi) "Boundary size does not match"
     @assert ndim == length(xlo) "Integration Space Dimension does not match boundary dimension"
@@ -36,13 +38,14 @@ function MCintegrate(
         zeros(eltype(xlo), length(funcs)),
         zeros(eltype(xlo), length(funcs)),
         zeros(eltype(xlo), length(funcs)),
+        rng
     )
 end
 
 
-function sample_NSteps!(mci::MCintegrate, nstep::Int; rng::AbstractRNG=Xoshiro(0))
+function sample_NSteps!(mci::MCintegrate, nstep::Int)
     # generate the random positions
-    xs = rand(rng, eltype(mci.xlo), (mci.ndim, nstep))
+    xs = rand(mci.rng, eltype(mci.xlo), (mci.ndim, nstep))
     for i = 1:nstep
         xs[:, i] .*= (mci.xhi .- mci.xlo)
         xs[:, i] .+= mci.xlo
@@ -55,8 +58,9 @@ function sample_NSteps!(mci::MCintegrate, nstep::Int; rng::AbstractRNG=Xoshiro(0
     for i = 1:nstep
         if mci.insideChecker(xs[:, i]'...)
             for j = 1:mci.nfunc
-                cur_f_avg[j] += cur_fct * mci.funcs[j](xs[:, i]'...) / nstep
-                cur_fsq_avg[j] += cur_fct * (mci.funcs[j](xs[:, i]'...))^2 / nstep
+                f_val =  mci.funcs[j](xs[:, i]'...)
+                cur_f_avg[j] += f_val  / (mci.step_taken + nstep)
+                cur_fsq_avg[j] +=  (f_val)^2 / (mci.step_taken + nstep)
             end
         end
     end
