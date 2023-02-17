@@ -98,5 +98,20 @@ end
         @test isapprox(ansVec[i], trueAns[i], atol=1.96 * err[i])
     end
 
+    steps = 1000:1000:1000000
+    for i in 100:2
+        steps[i] -= steps[i-1]
+    end
 
+    itg = MCintegrate(ndim, xlo, xhi, insideChecker, [func1, func2],Xoshiro(1))
+    errs = zeros(Float64,(2,100))
+    for i in 1:100
+        sample_NSteps!(itg,steps[i])
+        ansVec,errs[:,i] = calc_answer!(itg)
+    end
+    Ns = 1000:1000:1000000
+    for i in 1:99
+        @test isapprox(errs[1,i]/errs[1,i+1],Ns[i]/Ns[i+1],atol=0.2)
+        @test isapprox(errs[2,i]/errs[2,i+1],Ns[i]/Ns[i+1],atol=0.2)
+    end
 end
